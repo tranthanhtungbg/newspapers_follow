@@ -1,0 +1,270 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum UserRole {
+  GUEST
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum ResourceType {
+  article
+  youtube
+  pdf
+  other
+}
+
+enum BackupStatus {
+  pending
+  running
+  success
+  failed
+}
+
+// ─── Models ───────────────────────────────────────────────────
+
+model Language {
+  code       String  @id @db.VarChar(10)
+  name       String  @db.VarChar(100)
+  nativeName String  @map("native_name") @db.VarChar(100)
+  flagEmoji  String? @map("flag_emoji") @db.VarChar(10)
+  isRtl      Boolean @default(false) @map("is_rtl")
+  isActive   Boolean @default(true) @map("is_active")
+  sortOrder  Int     @default(100) @map("sort_order") @db.SmallInt
+
+  @@map("languages")
+}
+
+model User {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email              String   @unique @db.VarChar(255)
+  passwordHash       String?  @map("password_hash") @db.VarChar(255)
+  name               String   @db.VarChar(255)
+  avatar             String?  @db.VarChar(500)
+  role               UserRole @default(USER)
+  sourceLang         String   @default("en") @map("source_lang") @db.VarChar(10)
+  targetLang         String   @default("vi") @map("target_lang") @db.VarChar(10)
+  reminderTime       String?  @map("reminder_time") @db.VarChar(5)
+  reminderTz         String   @default("UTC") @map("reminder_tz") @db.VarChar(100)
+  streakCount        Int      @default(0) @map("streak_count")
+  lastActive         DateTime? @map("last_active") @db.Timestamptz
+  isActive           Boolean  @default(true) @map("is_active")
+  appearanceSettings Json     @default("{\"theme\":\"system\",\"fontSize\":\"base\",\"fontFamily\":\"serif\",\"lineHeight\":\"relaxed\",\"readingWidth\":\"normal\"}") @map("appearance_settings")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  oauthAccounts    OauthAccount[]
+  refreshTokens    RefreshToken[]
+  vocabularyItems  VocabularyItem[]
+  flashcardSessions FlashcardSession[]
+  pinnedVocabs     PinnedVocabulary[]
+  pinCategories    PinCategory[]
+  savedResources   SavedResource[]
+  auditLogs        AuditLog[]
+  systemBackups    SystemBackup[]
+
+  @@map("users")
+}
+
+model OauthAccount {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  provider   String   @db.VarChar(50)
+  providerId String   @map("provider_id") @db.VarChar(255)
+  email      String?  @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@map("oauth_accounts")
+}
+
+model RefreshToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  ipAddress String?   @map("ip_address") @db.VarChar(45)
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model CachedArticle {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  urlHash             String   @unique @map("url_hash") @db.VarChar(64)
+  url                 String   @db.VarChar(2000)
+  title               String?  @db.VarChar(500)
+  content             String
+  lang                String?  @db.VarChar(10)
+  metadata            Json     @default("{}")
+  readingTimeMinutes  Int?     @map("reading_time_minutes")
+  cachedAt            DateTime @default(now()) @map("cached_at") @db.Timestamptz
+  expiresAt           DateTime @map("expires_at") @db.Timestamptz
+
+  @@map("cached_articles")
+}
+
+model VocabularyItem {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  word            String    @db.VarChar(500)
+  translation     String
+  ipa             String?   @db.VarChar(500)
+  contextSentence String?   @map("context_sentence")
+  contextUrl      String?   @map("context_url") @db.VarChar(2000)
+  contextTitle    String?   @map("context_title") @db.VarChar(500)
+  partOfSpeech    String?   @map("part_of_speech") @db.VarChar(50)
+  examples        Json      @default("[]")
+  collocations    Json      @default("[]")
+  tags            String[]  @default([])
+  sourceLang      String    @map("source_lang") @db.VarChar(10)
+  targetLang      String    @map("target_lang") @db.VarChar(10)
+  isPinned        Boolean   @default(false) @map("is_pinned")
+  isMastered      Boolean   @default(false) @map("is_mastered")
+  difficulty      Int       @default(3) @db.SmallInt
+  reviewCount     Int       @default(0) @map("review_count")
+  lastReviewedAt  DateTime? @map("last_reviewed_at") @db.Timestamptz
+  notes           String?
+  audioUrl        String?   @map("audio_url") @db.VarChar(500)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcardSession FlashcardSession?
+  pinnedBy         PinnedVocabulary[]
+
+  @@map("vocabulary_items")
+}
+
+model FlashcardSession {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  vocabId        String   @unique @map("vocab_id") @db.Uuid
+  score          Int      @db.SmallInt
+  easeFactor     Float    @default(2.5) @map("ease_factor")
+  intervalDays   Int      @default(1) @map("interval_days")
+  nextReviewDate DateTime @default(now()) @map("next_review_date") @db.Date
+  reviewHistory  Json     @default("[]") @map("review_history")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocab VocabularyItem @relation(fields: [vocabId], references: [id], onDelete: Cascade)
+
+  @@map("flashcard_sessions")
+}
+
+model PinCategory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  color     String   @default("amber") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pins  PinnedVocabulary[]
+
+  @@unique([userId, name])
+  @@map("pin_categories")
+}
+
+model PinnedVocabulary {
+  userId       String   @map("user_id") @db.Uuid
+  vocabId      String   @map("vocab_id") @db.Uuid
+  categoryId   String?  @map("category_id") @db.Uuid
+  displayOrder Int      @default(0) @map("display_order") @db.SmallInt
+  color        String   @default("yellow") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocab    VocabularyItem @relation(fields: [vocabId], references: [id], onDelete: Cascade)
+  category PinCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@id([userId, vocabId])
+  @@map("pinned_vocabulary")
+}
+
+model SavedResource {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  url         String       @db.VarChar(2000)
+  type        ResourceType @default(article)
+  title       String?      @db.VarChar(500)
+  thumbnail   String?      @db.VarChar(500)
+  description String?
+  tags        String[]     @default([])
+  folder      String?      @db.VarChar(255)
+  notes       String?
+  isRead      Boolean      @default(false) @map("is_read")
+  isFavorite  Boolean      @default(false) @map("is_favorite")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_resources")
+}
+
+model AuditLog {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
+  action     String    @db.VarChar(100)
+  resource   String?   @db.VarChar(100)
+  resourceId String?   @map("resource_id") @db.Uuid
+  ipAddress  String?   @map("ip_address") @db.VarChar(45)
+  userAgent  String?   @map("user_agent")
+  meta       Json      @default("{}")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model SystemBackup {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  filename     String       @db.VarChar(255)
+  storagePath  String       @map("storage_path") @db.VarChar(500)
+  sizeBytes    BigInt?      @map("size_bytes")
+  status       BackupStatus @default(pending)
+  triggeredBy  String?      @map("triggered_by") @db.Uuid
+  errorMessage String?      @map("error_message")
+  completedAt  DateTime?    @map("completed_at") @db.Timestamptz
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [triggeredBy], references: [id], onDelete: SetNull)
+
+  @@map("system_backups")
+}
+
+model TtsCache {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  textHash  String   @unique @map("text_hash") @db.VarChar(64)
+  text      String
+  lang      String   @db.VarChar(10)
+  voice     String   @default("default") @db.VarChar(100)
+  audioUrl  String   @map("audio_url") @db.VarChar(500)
+  durationMs Int?    @map("duration_ms")
+  provider  String   @default("google") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("tts_cache")
+}
