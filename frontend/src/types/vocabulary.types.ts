@@ -16,6 +16,9 @@ export interface VocabularyItem {
   contextUrl?: string;
   contextTitle?: string;
   partOfSpeech?: string;
+  contextMeaning?: string;
+  alternativeMeanings: string[];
+  register?: string;
   examples: TranslationExample[];
   collocations: string[];
   tags: string[];
@@ -40,6 +43,9 @@ export interface CreateVocabularyDto {
   contextUrl?: string;
   contextTitle?: string;
   partOfSpeech?: string;
+  contextMeaning?: string;
+  alternativeMeanings?: string[];
+  register?: string;
   examples?: TranslationExample[];
   collocations?: string[];
   tags?: string[];

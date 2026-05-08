@@ -19,8 +19,11 @@ class CreateVocabDto {
   @IsOptional() @IsString() contextUrl?: string;
   @IsOptional() @IsString() contextTitle?: string;
   @IsOptional() @IsString() partOfSpeech?: string;
-  @IsOptional() examples?: unknown[];
-  @IsOptional() collocations?: string[];
+  @IsOptional() @IsString() contextMeaning?: string;
+  @IsOptional() @IsString() register?: string;
+  @IsOptional() alternativeMeanings?: any;
+  @IsOptional() examples?: any;
+  @IsOptional() collocations?: any;
   @IsOptional() @IsArray() tags?: string[];
   @IsString() sourceLang: string;
   @IsString() targetLang: string;

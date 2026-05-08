@@ -47,10 +47,18 @@ export function VocabularyCard({ item, onDelete }: Props) {
             {item.partOfSpeech && (
               <Badge variant="secondary">{item.partOfSpeech}</Badge>
             )}
+            {item.register && item.register !== 'neutral' && (
+              <Badge variant="outline">{item.register}</Badge>
+            )}
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5 font-medium">
             {item.translation}
           </p>
+          {item.contextMeaning && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              In context: {item.contextMeaning}
+            </p>
+          )}
         </div>
 
         {/* Actions — visible on hover */}
@@ -113,19 +121,60 @@ export function VocabularyCard({ item, onDelete }: Props) {
       </div>
 
       {/* Expanded details */}
-      {item.examples?.length > 0 && (
+      {(item.examples?.length > 0 || item.alternativeMeanings?.length > 0 || item.collocations?.length > 0) && (
         <button
           onClick={() => setExpanded(!expanded)}
           className="mt-2 text-xs text-blue-500 hover:underline"
         >
-          {expanded ? '▲ Less' : '▼ Examples'}
+          {expanded ? '▲ Hide details' : '▼ View details'}
         </button>
       )}
-      {expanded && item.examples?.map((ex, i) => (
-        <div key={i} className="mt-2 pl-2 border-l-2 border-blue-200 dark:border-blue-800 text-xs">
-          <p className="text-gray-700 dark:text-gray-300 italic">{ex.en}</p>
+      
+      {expanded && (
+        <div className="mt-3 space-y-3">
+          {item.alternativeMeanings?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Also means</p>
+              <div className="flex flex-wrap gap-1">
+                {item.alternativeMeanings.map((m, i) => (
+                  <span key={i} className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {item.collocations?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Common phrases</p>
+              <div className="flex flex-wrap gap-1">
+                {item.collocations.map((c, i) => (
+                  <span key={i} className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {item.examples?.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Examples</p>
+              <div className="space-y-2">
+                {item.examples.map((ex, i) => (
+                  <div key={i} className="pl-2 border-l-2 border-blue-200 dark:border-blue-800 text-xs">
+                    <p className="text-gray-700 dark:text-gray-300 italic">{ex.en}</p>
+                    {ex[item.targetLang] && (
+                      <p className="text-gray-500 dark:text-gray-500 mt-0.5">{ex[item.targetLang]}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      ))}
+      )}
     </div>
   );
 }
