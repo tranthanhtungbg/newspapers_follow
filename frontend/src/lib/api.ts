@@ -82,6 +82,14 @@ export const readerApi = {
   fetch: (url: string) => api.post('/reader/fetch', { url }),
   summarize: (articleId: string, targetLang: string, level: string) =>
     api.post('/reader/summarize', { articleId, targetLang, level }),
+  uploadPdf: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/reader/upload-pdf', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+  },
 };
 
 export const translationApi = {
@@ -113,6 +121,7 @@ export const vocabularyApi = {
   createCategory: (name: string, color?: string) => api.post('/vocabulary/categories', { name, color }),
   updateCategory: (id: string, name?: string, color?: string) => api.patch(`/vocabulary/categories/${id}`, { name, color }),
   deleteCategory: (id: string) => api.delete(`/vocabulary/categories/${id}`),
+  movePin: (vocabId: string, categoryId: string | null) => api.post(`/vocabulary/${vocabId}/pin`, { categoryId }),
 };
 
 export const flashcardApi = {

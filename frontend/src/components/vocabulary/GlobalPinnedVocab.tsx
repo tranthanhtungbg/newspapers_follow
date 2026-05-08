@@ -12,6 +12,7 @@ import {
   X,
   Edit2,
   Check,
+  ArrowRightLeft,
 } from "lucide-react";
 import { vocabularyApi } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth.store";
@@ -21,6 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getCategoryButtonClass, getCategoryBgClass, CATEGORY_BG_COLORS } from "@/lib/colors";
 import type { VocabularyItem } from "@/types/vocabulary.types";
+import { MovePinDialog } from "./MovePinDialog";
 
 export function GlobalPinnedVocab() {
   const { isAuthenticated } = useAuthStore();
@@ -71,6 +73,9 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
   const [editName, setEditName] = useState(category.name);
   const [editColor, setEditColor] = useState(category.color || 'amber');
 
+  // Move pin state
+  const [movingPin, setMovingPin] = useState<{ vocabId: string; word: string } | null>(null);
+
   const unpinMutation = useMutation({
     mutationFn: (id: string) => vocabularyApi.unpin(id).then((r) => r.data),
     onSuccess: () => {
@@ -118,8 +123,9 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
   return (
     <div className="pointer-events-auto">
       {isExpanded ? (
-        <Card 
-          style={{ width: `${width}px` }}
+        <>
+          <Card 
+            style={{ width: `${width}px` }}
           className="shadow-2xl border-border/50 animate-scale-in origin-bottom-right flex flex-col max-h-[60vh] overflow-hidden relative"
         >
           <div 
@@ -228,14 +234,24 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
                         </Button>
                       </div>
                     ) : (
-                      <Button
-                        variant="ghost" size="icon"
-                        className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                        onClick={() => setConfirmDeleteId(pin.vocabId)}
-                        title="Unpin"
-                      >
-                        <PinOffIcon className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-6 w-6 text-muted-foreground"
+                          onClick={() => setMovingPin({ vocabId: pin.vocabId, word: pin.vocab?.word ?? '' })}
+                          title="Move to another category"
+                        >
+                          <ArrowRightLeft className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-6 w-6 text-muted-foreground"
+                          onClick={() => setConfirmDeleteId(pin.vocabId)}
+                          title="Unpin"
+                        >
+                          <PinOffIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -243,6 +259,16 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
             </div>
           </div>
         </Card>
+
+          {/* Move Pin Dialog */}
+          <MovePinDialog
+            vocabId={movingPin?.vocabId ?? null}
+            vocabWord={movingPin?.word ?? ''}
+            currentCategoryId={category.id}
+            isOpen={!!movingPin}
+            onClose={() => setMovingPin(null)}
+          />
+        </>
       ) : (
         <Button
           size="lg"

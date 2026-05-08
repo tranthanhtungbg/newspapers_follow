@@ -1,7 +1,12 @@
-import { Controller, Post, Body, Req } from '@nestjs/common';
+import {
+  Controller, Post, Body, Req, UseInterceptors,
+  UploadedFile, BadRequestException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtService } from '@nestjs/jwt';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ReaderService } from './reader.service';
 import { IsUrl, IsString, IsIn } from 'class-validator';
 
@@ -52,5 +57,29 @@ export class ReaderController {
   @Post('summarize')
   summarize(@Body() dto: SummarizeDto) {
     return this.reader.summarize(dto.articleId, dto.targetLang, dto.level);
+  }
+
+  // POST /reader/upload-pdf — upload & parse PDF
+  @Post('upload-pdf')
+  @Throttle({ medium: { limit: 10, ttl: 3600000 } })
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }))
+  async uploadPdf(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) throw new BadRequestException('No PDF file uploaded');
+    if (!file.mimetype.includes('pdf') && !file.originalname.endsWith('.pdf')) {
+      throw new BadRequestException('Only PDF files are allowed');
+    }
+
+    let user = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        user = this.jwt.verify(token);
+      } catch {
+        // invalid token, treat as guest
+      }
+    }
+
+    return this.reader.parsePdf(file.buffer, file.originalname, user);
   }
 }
