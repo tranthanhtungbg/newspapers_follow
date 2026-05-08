@@ -6,6 +6,8 @@ import { FlashcardItem } from './FlashcardItem';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Settings2Icon } from 'lucide-react';
+import { useUiStore } from '@/stores/ui.store';
 
 export function StudySession() {
   const [cramMode, setCramMode] = useState(false);
@@ -16,6 +18,20 @@ export function StudySession() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 });
+
+  const [showTtsSettings, setShowTtsSettings] = useState(false);
+  const { flashcardVoice, flashcardRate, setFlashcardVoice, setFlashcardRate } = useUiStore();
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      setVoices(window.speechSynthesis.getVoices());
+    };
+    loadVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   // Sync cards when API data changes
   useEffect(() => {
@@ -150,21 +166,71 @@ export function StudySession() {
           />
         </div>
         
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleShuffle}
-          className="gap-2 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="16 3 21 3 21 8"></polyline>
-            <line x1="4" y1="20" x2="21" y2="3"></line>
-            <polyline points="21 16 21 21 16 21"></polyline>
-            <line x1="15" y1="15" x2="21" y2="21"></line>
-            <line x1="4" y1="4" x2="9" y2="9"></line>
-          </svg>
-          Shuffle
-        </Button>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTtsSettings(!showTtsSettings)}
+              className={cn("gap-2 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700", showTtsSettings && "bg-gray-100 dark:bg-gray-800")}
+            >
+              <Settings2Icon className="w-4 h-4" />
+              TTS
+            </Button>
+            
+            {showTtsSettings && (
+              <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-900 border dark:border-gray-800 shadow-xl rounded-xl p-4 w-72 z-50 flex flex-col gap-4 text-left">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Voice</label>
+                  <select 
+                    value={flashcardVoice}
+                    onChange={(e) => setFlashcardVoice(e.target.value)}
+                    className="w-full text-sm rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2"
+                  >
+                    <option value="">Default System Voice</option>
+                    {voices.map(v => (
+                      <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Speed</span>
+                    <span className="text-blue-500 font-bold">{flashcardRate.toFixed(1)}x</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min="0.5" max="2.0" step="0.1" 
+                    value={flashcardRate}
+                    onChange={(e) => setFlashcardRate(parseFloat(e.target.value))}
+                    className="w-full accent-blue-600"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <span>0.5x</span>
+                    <span>1.0x</span>
+                    <span>2.0x</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleShuffle}
+            className="gap-2 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+              <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+            Shuffle
+          </Button>
+        </div>
       </div>
 
       {/* Progress bar */}

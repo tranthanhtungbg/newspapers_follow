@@ -81,7 +81,8 @@ export function UrlInput({ className, onPdfSelect }: UrlInputProps) {
     fetchArticle(url);
   };
 
-  const isValidUrl = inputVal.startsWith('http://') || inputVal.startsWith('https://');
+  const trimmedUrl = inputVal.trim();
+  const isValidUrl = trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://');
 
   // PDF handlers
   const handleFileSelect = (file: File | null) => {

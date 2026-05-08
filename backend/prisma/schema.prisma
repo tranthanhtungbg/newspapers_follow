@@ -268,3 +268,14 @@ model TtsCache {
 
   @@map("tts_cache")
 }
+
+model YoutubeTranscript {
+  videoId    String   @map("video_id") @db.VarChar(50)
+  targetLang String   @map("target_lang") @db.VarChar(10)
+  title      String   @db.VarChar(500)
+  subtitles  Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@id([videoId, targetLang])
+  @@map("youtube_transcripts")
+}

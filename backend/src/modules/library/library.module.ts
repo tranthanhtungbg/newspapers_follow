@@ -21,15 +21,27 @@ class LibraryService {
     };
 
     const [items, total] = await Promise.all([
-      this.prisma.savedResource.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.savedResource.findMany({ where, skip, take: limit, orderBy: { updatedAt: 'desc' } }),
       this.prisma.savedResource.count({ where }),
     ]);
 
     return { data: items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
-  async create(userId: string, data: object) {
-    return this.prisma.savedResource.create({ data: { ...(data as object), userId } as never });
+  async create(userId: string, data: any) {
+    if (data.url) {
+      const existing = await this.prisma.savedResource.findFirst({
+        where: { userId, url: data.url }
+      });
+      if (existing) {
+        // If it exists, just bump the updatedAt timestamp
+        return this.prisma.savedResource.update({
+          where: { id: existing.id },
+          data: { updatedAt: new Date(), title: data.title || existing.title }
+        });
+      }
+    }
+    return this.prisma.savedResource.create({ data: { ...data, userId } as never });
   }
 
   async update(userId: string, id: string, data: object) {

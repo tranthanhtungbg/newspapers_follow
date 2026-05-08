@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { readerApi } from '@/lib/api';
+import { readerApi, libraryApi } from '@/lib/api';
 import { useReaderStore } from '@/stores/reader.store';
 import type { Article } from '@/types/reader.types';
 
@@ -16,9 +16,15 @@ export function useReader() {
       setLoading(true);
       setError(null);
     },
-    onSuccess: (res) => {
+    onSuccess: (res, inputUrl) => {
       const data = res.data.data as Article;
       setArticle(data);
+      // Auto-save to Library
+      libraryApi.create({
+        url: inputUrl,
+        title: data.title || 'Web Article',
+        type: 'article',
+      }).catch(() => {});
     },
     onError: (err: unknown) => {
       const message =

@@ -33,6 +33,9 @@ export function GlobalPinnedVocab() {
     enabled: isAuthenticated,
   });
 
+  // Accordion: chỉ 1 card được mở tại một thời điểm
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const groupedPins = React.useMemo(() => {
     const groups: Record<string, { category: any; pins: any[] }> = {
       uncategorized: { category: { id: null, name: "Pinned Vocab", color: "amber" }, pins: [] },
@@ -55,15 +58,39 @@ export function GlobalPinnedVocab() {
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col-reverse items-end gap-3 pointer-events-none">
-      {groupedPins.map((group) => (
-        <PinGroupCard key={group.category.id || "uncategorized"} category={group.category} pins={group.pins} qc={qc} />
-      ))}
+      {groupedPins.map((group) => {
+        const cardId = group.category.id ?? "uncategorized";
+        return (
+          <PinGroupCard
+            key={cardId}
+            category={group.category}
+            pins={group.pins}
+            qc={qc}
+            isExpanded={expandedId === cardId}
+            onToggle={() => setExpandedId(expandedId === cardId ? null : cardId)}
+            onCollapse={() => setExpandedId(null)}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: any }) {
-  const [isExpanded, setIsExpanded] = useState(category.id === null); // Uncategorized expanded by default
+function PinGroupCard({
+  category,
+  pins,
+  qc,
+  isExpanded,
+  onToggle,
+  onCollapse,
+}: {
+  category: any;
+  pins: any[];
+  qc: any;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onCollapse: () => void;
+}) {
   const [autoCollapse, setAutoCollapse] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [width, setWidth] = useState(320);
@@ -115,7 +142,7 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
 
   useEffect(() => {
     if (autoCollapse && isExpanded) {
-      const timer = setTimeout(() => setIsExpanded(false), 15000);
+      const timer = setTimeout(() => onCollapse(), 15000);
       return () => clearTimeout(timer);
     }
   }, [autoCollapse, isExpanded, pins.length]);
@@ -207,7 +234,7 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsExpanded(false)}
+                    onClick={() => onCollapse()}
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -276,7 +303,7 @@ function PinGroupCard({ category, pins, qc }: { category: any; pins: any[]; qc: 
             "rounded-full shadow-lg h-14 px-5 animate-fade-in flex items-center justify-center relative border-none gap-2",
             getCategoryButtonClass(category?.color)
           )}
-          onClick={() => setIsExpanded(true)}
+          onClick={() => onToggle()}
           title={category.name}
         >
           <PinIcon className="h-5 w-5 shrink-0" />

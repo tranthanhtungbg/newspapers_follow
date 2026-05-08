@@ -32,7 +32,15 @@ export function LibraryList() {
         <div 
           key={item.id} 
           className="flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => router.push(`/reader?url=${encodeURIComponent(item.url)}`)}
+          onClick={() => {
+            if (item.type === 'youtube') {
+              router.push(`/video?url=${encodeURIComponent(item.url)}`);
+            } else if (item.type === 'pdf') {
+              alert("PDF files are processed locally on your device and cannot be automatically re-opened from history yet. Please upload the file again in the Reader.");
+            } else {
+              router.push(`/reader?url=${encodeURIComponent(item.url)}`);
+            }
+          }}
         >
           <div className="p-5 flex-1 flex flex-col">
             <div className="flex items-start justify-between gap-4 mb-3">

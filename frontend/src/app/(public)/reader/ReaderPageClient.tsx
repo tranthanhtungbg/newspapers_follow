@@ -7,12 +7,13 @@ import { ArticleRenderer } from "@/components/reader/ArticleRenderer";
 import { ReadingModeToggle } from "@/components/reader/ReadingModeToggle";
 import { AppearanceSettings } from "@/components/ui/AppearanceSettings";
 import { PdfViewer } from "@/components/reader/PdfViewer";
+import { TtsPlayer } from "@/components/reader/TtsPlayer";
 import { SkeletonText } from "@/components/ui/skeleton";
 import { useReaderStore } from "@/stores/reader.store";
 import { useLanguageStore } from "@/stores/language.store";
 import { useReader } from "@/hooks/useReader";
 import { useMutation } from "@tanstack/react-query";
-import { readerApi } from "@/lib/api";
+import { readerApi, libraryApi } from "@/lib/api";
 import { formatReadingTime, getDomain } from "@/lib/utils";
 import type { TranslationMode } from "@/types/reader.types";
 import type { Article } from "@/types/reader.types";
@@ -36,6 +37,13 @@ export function ReaderPageClient() {
       const data = res.data.data as Article;
       setArticle(data);
       setPdfFile(null); // close PDF viewer → show reader
+
+      // Auto-save PDF to Library
+      libraryApi.create({
+        url: data.url || `file://${pdfFile?.name || 'pdf'}`,
+        title: data.title || pdfFile?.name || 'Uploaded PDF',
+        type: 'pdf',
+      }).catch(() => {});
     },
     onError: (err: unknown) => {
       const message =
@@ -231,6 +239,11 @@ export function ReaderPageClient() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Floating TTS Player */}
+      {!isLoading && article && !isPdfOpen && (
+        <TtsPlayer htmlContent={article.content} lang={article.lang} />
       )}
     </div>
   );

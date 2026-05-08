@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ttsApi } from '@/lib/api';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { useUiStore } from '@/stores/ui.store';
 
 interface UseAudioOptions {
   lang?: string;
@@ -10,55 +10,77 @@ export function useAudio({ lang = 'en', voice }: UseAudioOptions = {}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const cacheRef = useRef<Map<string, string>>(new Map());
+
+  const { flashcardVoice, flashcardRate } = useUiStore();
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   const play = useCallback(
     async (text: string) => {
+      if (!('speechSynthesis' in window)) {
+        setError('Your browser does not support text-to-speech.');
+        return;
+      }
+
       if (isPlaying) {
-        audioRef.current?.pause();
+        window.speechSynthesis.cancel();
         setIsPlaying(false);
         return;
       }
 
       setError(null);
-      const cacheKey = `${text}__${lang}__${voice ?? 'default'}`;
+      setIsLoading(true);
 
       try {
-        let audioUrl = cacheRef.current.get(cacheKey);
-
-        if (!audioUrl) {
-          setIsLoading(true);
-          const res = await ttsApi.generate(text, lang, voice);
-          audioUrl = res.data.data.audioUrl as string;
-          cacheRef.current.set(cacheKey, audioUrl);
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = flashcardRate;
+        
+        if (flashcardVoice) {
+          const voice = voicesRef.current.find(v => v.name === flashcardVoice);
+          if (voice) utterance.voice = voice;
         }
-
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        audio.onplay = () => { setIsPlaying(true); setIsLoading(false); };
-        audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => {
+        
+        utterance.onstart = () => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        };
+        
+        utterance.onend = () => setIsPlaying(false);
+        
+        utterance.onerror = (e) => {
+          console.error('SpeechSynthesis error:', e);
           setIsPlaying(false);
           setError('Audio playback failed');
         };
 
-        await audio.play();
-      } catch {
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error(err);
         setError('Failed to generate audio');
         setIsLoading(false);
       }
     },
-    [isPlaying, lang, voice],
+    [isPlaying, lang, flashcardRate, flashcardVoice],
   );
 
   const stop = useCallback(() => {
-    audioRef.current?.pause();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
     setIsPlaying(false);
   }, []);
 
-  useEffect(() => () => { audioRef.current?.pause(); }, []);
+  useEffect(() => () => { stop(); }, [stop]);
 
   return { play, stop, isPlaying, isLoading, error };
 }

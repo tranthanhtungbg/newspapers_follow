@@ -8,7 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ReaderService } from './reader.service';
-import { IsUrl, IsString, IsIn } from 'class-validator';
+import { YoutubeService } from './youtube.service';
+import { IsUrl, IsString, IsIn, IsOptional } from 'class-validator';
 
 class FetchArticleDto {
   @IsUrl({}, { message: 'Must be a valid URL' })
@@ -26,12 +27,55 @@ class SummarizeDto {
   level: 'brief' | 'medium' | 'detailed';
 }
 
+class YoutubeDto {
+  @IsUrl({}, { message: 'Must be a valid YouTube URL' })
+  url: string;
+
+  @IsOptional()
+  @IsString()
+  targetLang?: string;
+}
+
 @Controller('reader')
 export class ReaderController {
   constructor(
     private readonly reader: ReaderService,
+    private readonly youtube: YoutubeService,
     private readonly jwt: JwtService,
   ) {}
+
+  // POST /reader/youtube — get video info & translated subtitles
+  @Post('youtube')
+  @Throttle({ medium: { limit: 10, ttl: 3600000 } })
+  async getYoutubeSubtitles(@Body() dto: YoutubeDto) {
+    const result = await this.youtube.getSubtitlesInfo(dto.url, dto.targetLang || 'vi');
+    return { success: true, data: result };
+  }
+
+  @Post('youtube/translate-batch')
+  @Throttle({ medium: { limit: 100, ttl: 3600000 } })
+  async translateYoutubeBatch(
+    @Body('texts') texts: string[],
+    @Body('targetLang') targetLang?: string,
+  ) {
+    if (!texts || !texts.length) return { success: true, data: [] };
+    const translations = await this.youtube.translateBatch(texts, targetLang || 'vi');
+    return { success: true, data: translations };
+  }
+
+  @Post('youtube/save')
+  async saveYoutubeSubtitles(
+    @Body('videoId') videoId: string,
+    @Body('title') title: string,
+    @Body('targetLang') targetLang: string,
+    @Body('subtitles') subtitles: any[],
+  ) {
+    if (!videoId || !subtitles) {
+      throw new BadRequestException('videoId and subtitles are required');
+    }
+    await this.youtube.saveToCache(videoId, title, targetLang || 'vi', subtitles);
+    return { success: true, message: 'Saved to cache' };
+  }
 
   // POST /reader/fetch — public (rate limited)
   @Post('fetch')

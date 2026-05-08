@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Moon, Sun, Monitor, BookOpen, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth.store';
+import { clearTokens } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
@@ -20,6 +21,7 @@ const NAV_LINKS = [
   { href: '/vocabulary', label: 'Vocabulary' },
   { href: '/flashcards', label: 'Flashcards' },
   { href: '/library', label: 'Library' },
+  { href: '/video', label: 'Video' },
 ];
 
 function ThemeToggle() {
@@ -49,7 +51,14 @@ function ThemeToggle() {
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    await clearTokens();
+    logout();
+    router.push('/login');
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -103,7 +112,9 @@ export function Navbar() {
                   <Link href="/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive cursor-pointer" onClick={handleLogout}>
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

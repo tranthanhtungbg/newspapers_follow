@@ -21,6 +21,10 @@ interface UiState {
   isSummaryOpen: boolean;
   isPinOverlayCollapsed: boolean;
 
+  // Flashcard TTS Settings
+  flashcardVoice: string;
+  flashcardRate: number;
+
   // Setters
   setFontSize: (size: FontSize) => void;
   setFontFamily: (font: FontFamily) => void;
@@ -28,6 +32,8 @@ interface UiState {
   setReadingWidth: (width: ReadingWidth) => void;
   toggleSummary: () => void;
   togglePinOverlay: () => void;
+  setFlashcardVoice: (voice: string) => void;
+  setFlashcardRate: (rate: number) => void;
   resetAppearance: () => void;
 }
 
@@ -40,6 +46,8 @@ const DEFAULTS = {
   fontFamily: 'serif' as FontFamily,
   lineHeight: 'relaxed' as LineHeight,
   readingWidth: 'normal' as ReadingWidth,
+  flashcardVoice: '',
+  flashcardRate: 0.9,
 };
 
 // ─────────────────────────────────────────────
@@ -60,6 +68,8 @@ export const useUiStore = create<UiState>()(
       toggleSummary: () => set((s) => ({ isSummaryOpen: !s.isSummaryOpen })),
       togglePinOverlay: () =>
         set((s) => ({ isPinOverlayCollapsed: !s.isPinOverlayCollapsed })),
+      setFlashcardVoice: (voice) => set({ flashcardVoice: voice }),
+      setFlashcardRate: (rate) => set({ flashcardRate: rate }),
       resetAppearance: () => set(DEFAULTS),
     }),
     {
@@ -69,6 +79,8 @@ export const useUiStore = create<UiState>()(
         fontFamily: state.fontFamily,
         lineHeight: state.lineHeight,
         readingWidth: state.readingWidth,
+        flashcardVoice: state.flashcardVoice,
+        flashcardRate: state.flashcardRate,
       }),
     },
   ),

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { PinIcon, PinOffIcon } from 'lucide-react';
+import { PinIcon, PinOffIcon, CopyIcon, CheckIcon } from 'lucide-react';
 import { useAudio } from '@/hooks/useAudio';
 import { vocabularyApi } from '@/lib/api';
 import { PinCategoryDialog } from '../vocabulary/PinCategoryDialog';
@@ -32,6 +32,7 @@ export function FlashcardItem({ card, onRate, totalRemaining, currentIndex }: Pr
   const { play, isPlaying } = useAudio({ lang: card.vocab.sourceLang });
   const qc = useQueryClient();
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: pins = [] } = useQuery({
     queryKey: ['pinned-vocabulary'],
@@ -58,6 +59,13 @@ export function FlashcardItem({ card, onRate, totalRemaining, currentIndex }: Pr
   const handleRate = (score: number) => {
     onRate(card.vocabId, score, Date.now() - startTime);
     setFlipped(false);
+  };
+
+  const handleCopy = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(card.vocab.word);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Swipe logic
@@ -132,26 +140,41 @@ export function FlashcardItem({ card, onRate, totalRemaining, currentIndex }: Pr
           {/* Front */}
           <div className="col-start-1 row-start-1 flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl
                           bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800
-                          shadow-lg backface-hidden z-10 select-none"
+                          shadow-lg backface-hidden z-10 select-none relative"
                style={{ minHeight: '320px' }}>
-            <div className="flex flex-col items-center gap-3 mb-2 w-full justify-center">
+            
+            {/* Top right actions */}
+            <div className="absolute top-4 right-4 flex items-center gap-3 z-20">
+              <button
+                onClick={(e) => { e.stopPropagation(); play(card.vocab.word); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={cn('text-gray-400 hover:text-blue-500 transition-colors', isPlaying && 'text-blue-500')}
+                aria-label="Play pronunciation"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              </button>
+              <button
+                onClick={handleCopy}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={cn('transition-colors', copied ? 'text-green-500' : 'text-gray-400 hover:text-blue-500')}
+                aria-label="Copy text"
+                title="Copy to clipboard"
+              >
+                {copied ? <CheckIcon className="h-5 w-5" /> : <CopyIcon className="h-5 w-5" />}
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 mb-2 w-full justify-center mt-6">
               <h2 className={cn(
                 "text-center break-words max-w-full text-gray-900 dark:text-white",
                 card.vocab.word.length > 80 ? "text-xl sm:text-2xl font-medium leading-relaxed" : "text-3xl sm:text-4xl font-bold"
               )}>
                 {card.vocab.word}
               </h2>
-              <button
-                onClick={(e) => { e.stopPropagation(); play(card.vocab.word); }}
-                className={cn('text-gray-400 hover:text-blue-500 transition-colors', isPlaying && 'text-blue-500')}
-                aria-label="Play pronunciation"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              </button>
             </div>
             {card.vocab.ipa && (
               <p className="text-gray-400 font-mono text-xl mb-3">{card.vocab.ipa}</p>
@@ -169,10 +192,35 @@ export function FlashcardItem({ card, onRate, totalRemaining, currentIndex }: Pr
             className="col-start-1 row-start-1 flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl
                        bg-gradient-to-br from-blue-50 to-indigo-50
                        dark:from-blue-950/50 dark:to-indigo-950/50
-                       border-2 border-blue-100 dark:border-blue-900 shadow-lg backface-hidden"
+                       border-2 border-blue-100 dark:border-blue-900 shadow-lg backface-hidden relative"
             style={{ transform: 'rotateY(180deg)', minHeight: '320px' }}
           >
-            <div className="my-auto flex flex-col items-center justify-center w-full">
+            {/* Top right actions */}
+            <div className="absolute top-4 right-4 flex items-center gap-3 z-20">
+              <button
+                onClick={(e) => { e.stopPropagation(); play(card.vocab.word); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={cn('text-gray-400 hover:text-blue-500 transition-colors', isPlaying && 'text-blue-500')}
+                aria-label="Play pronunciation"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              </button>
+              <button
+                onClick={handleCopy}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={cn('transition-colors', copied ? 'text-green-500' : 'text-gray-400 hover:text-blue-500')}
+                aria-label="Copy text"
+                title="Copy to clipboard"
+              >
+                {copied ? <CheckIcon className="h-5 w-5" /> : <CopyIcon className="h-5 w-5" />}
+              </button>
+            </div>
+
+            <div className="my-auto flex flex-col items-center justify-center w-full mt-6">
               <p className={cn(
                 "text-blue-900 dark:text-blue-100 text-center mb-4 break-words max-w-full",
                 card.vocab.translation.length > 80 ? "text-lg sm:text-xl font-medium leading-relaxed" : "text-xl sm:text-2xl font-bold"

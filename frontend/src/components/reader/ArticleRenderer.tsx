@@ -52,6 +52,7 @@ export function ArticleRenderer({ article, targetLang, mode }: Props) {
       <ReadingProgress containerRef={containerRef} />
 
       <div
+        id="reader-content"
         ref={containerRef}
         className={`
           prose dark:prose-invert w-full mx-auto

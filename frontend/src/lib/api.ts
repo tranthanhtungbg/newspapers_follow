@@ -90,6 +90,12 @@ export const readerApi = {
       timeout: 60000,
     });
   },
+  getYoutubeSubtitles: (url: string, targetLang?: string) => 
+    api.post('/reader/youtube', { url, targetLang }, { timeout: 15000 }), // Fast because it just fetches raw or cached
+  translateYoutubeBatch: (texts: string[], targetLang?: string) =>
+    api.post('/reader/youtube/translate-batch', { texts, targetLang }, { timeout: 60000 }), // Batch translation timeout 60s
+  saveYoutubeSubtitles: (videoId: string, title: string, targetLang: string, subtitles: any[]) =>
+    api.post('/reader/youtube/save', { videoId, title, targetLang, subtitles }),
 };
 
 export const translationApi = {
