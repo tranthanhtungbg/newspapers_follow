@@ -13,10 +13,12 @@ import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { UserService } from '../../core/services/user.service';
 
+import { RouterModule } from '@angular/router';
+
 @Component({
   selector: 'app-user-progress',
   standalone: true,
-  imports: [CommonModule, NzCardModule, NzStatisticModule, NzTagModule, NzTableModule, NzProgressModule, NzSpinModule, NzGridModule, NzAvatarModule, NzBreadCrumbModule, NzIconModule],
+  imports: [CommonModule, RouterModule, NzCardModule, NzStatisticModule, NzTagModule, NzTableModule, NzProgressModule, NzSpinModule, NzGridModule, NzAvatarModule, NzBreadCrumbModule, NzIconModule],
   template: `
     <nz-breadcrumb style="margin-bottom:16px">
       <nz-breadcrumb-item><a routerLink="/users">Người dùng</a></nz-breadcrumb-item>

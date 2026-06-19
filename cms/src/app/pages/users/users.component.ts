@@ -92,7 +92,7 @@ import { AdminService } from '../../core/services/admin.service';
                   </button>
                 </a>
                 <button nz-button nzType="text" nzShape="circle" nz-tooltip nzTooltipTitle="Reset mật khẩu" (click)="openResetModal(u)" style="color: #fa8c16;">
-                  <span nz-icon nzType="key" style="font-size: 16px;"></span>
+                  <span nz-icon nzType="lock" style="font-size: 16px;"></span>
                 </button>
                 <button nz-button nzType="text" nzDanger nzShape="circle" nz-tooltip nzTooltipTitle="Xóa người dùng" (click)="deleteUser(u)">
                   <span nz-icon nzType="delete" style="font-size: 16px;"></span>
