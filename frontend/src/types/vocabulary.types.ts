@@ -64,6 +64,8 @@ export interface VocabularyFilters {
   dateTo?: string;
   sortBy?: 'createdAt' | 'reviewCount' | 'difficulty' | 'word';
   sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }
 
 // ── Flashcards ─────────────────────────────────────────────────

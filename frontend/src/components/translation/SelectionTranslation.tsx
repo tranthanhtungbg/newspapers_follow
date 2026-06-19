@@ -73,10 +73,19 @@ export function SelectionTranslation({ text, position, targetLang, context, onCl
       {/* The Popover */}
       <div style={style} className="animate-scale-in flex flex-col">
         {isTranslating ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-5 w-72 border border-gray-100 dark:border-gray-800 relative">
-            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-500">Translating "{text.slice(0, 20)}{text.length > 20 ? '…' : ''}"</span>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-4 w-72 border border-gray-100 dark:border-gray-800 relative">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-4 h-4 shrink-0 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-gray-500 truncate">Translating "{text}"</span>
+              </div>
+              <button 
+                onClick={onClose}
+                className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-900/30 w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors"
+                title="Cancel"
+              >
+                ✕
+              </button>
             </div>
           </div>
         ) : result ? (

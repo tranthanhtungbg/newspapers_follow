@@ -18,13 +18,18 @@ const SORT_OPTIONS = [
 ] as const;
 
 export default function VocabularyPage() {
-  const [filters, setFilters] = useState<VocabularyFilters>({ sortBy: 'createdAt', sortOrder: 'desc' });
+  const [filters, setFilters] = useState<VocabularyFilters>({ sortBy: 'createdAt', sortOrder: 'desc', page: 1, limit: 20 });
   const [search, setSearch] = useState('');
   const { items, isLoading, meta } = useVocabulary(filters);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters((f) => ({ ...f, search }));
+    setFilters((f) => ({ ...f, search, page: 1 }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters((f) => ({ ...f, page: newPage }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -67,7 +72,7 @@ export default function VocabularyPage() {
         {SORT_OPTIONS.map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => setFilters((f) => ({ ...f, sortBy: key }))}
+            onClick={() => setFilters((f) => ({ ...f, sortBy: key, page: 1 }))}
             className={cn(
               'px-3 py-1.5 rounded-md text-xs font-medium border transition-colors',
               filters.sortBy === key
@@ -79,7 +84,7 @@ export default function VocabularyPage() {
           </button>
         ))}
         <button
-          onClick={() => setFilters((f) => ({ ...f, isMastered: f.isMastered === true ? undefined : true }))}
+          onClick={() => setFilters((f) => ({ ...f, isMastered: f.isMastered === true ? undefined : true, page: 1 }))}
           className={cn(
             'px-3 py-1.5 rounded-md text-xs font-medium border transition-colors flex items-center gap-1.5',
             filters.isMastered
@@ -113,11 +118,38 @@ export default function VocabularyPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {items.map((item) => (
-            <VocabularyCard key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {items.map((item) => (
+              <VocabularyCard key={item.id} item={item} />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {meta && meta.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.page <= 1}
+                onClick={() => handlePageChange(meta.page - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {meta.page} of {meta.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.page >= meta.totalPages}
+                onClick={() => handlePageChange(meta.page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -19,6 +19,7 @@ import { LibraryModule } from './modules/library/library.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { UserModule } from './modules/user/user.module';
+import { GrammarModule } from './modules/grammar/grammar.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { UserModule } from './modules/user/user.module';
     LibraryModule,
     NotificationModule,
     AdminModule,
+    GrammarModule,
   ],
 })
 export class AppModule {}

@@ -20,6 +20,7 @@ const NAV_LINKS = [
   { href: '/reader', label: 'Read' },
   { href: '/vocabulary', label: 'Vocabulary' },
   { href: '/flashcards', label: 'Flashcards' },
+  { href: '/grammar', label: 'Grammar' },
   { href: '/library', label: 'Library' },
   { href: '/video', label: 'Video' },
 ];

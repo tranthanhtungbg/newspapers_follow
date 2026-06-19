@@ -18,7 +18,6 @@ declare global {
       clear(): void;
     };
   }
-  var Highlight: any;
 }
 
 export function TtsPlayer({ htmlContent, lang = 'en' }: Props) {

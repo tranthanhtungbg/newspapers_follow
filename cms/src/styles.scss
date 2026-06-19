@@ -1,0 +1,30 @@
+@import "ng-zorro-antd/ng-zorro-antd.min.css";
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+nz-sider ul[nz-menu] {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+}
+
+nz-header {
+  line-height: 64px;
+}
+
+.ant-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}

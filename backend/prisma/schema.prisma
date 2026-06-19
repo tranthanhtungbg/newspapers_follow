@@ -26,6 +26,12 @@ enum ResourceType {
   other
 }
 
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
 enum BackupStatus {
   pending
   running
@@ -74,6 +80,8 @@ model User {
   savedResources   SavedResource[]
   auditLogs        AuditLog[]
   systemBackups    SystemBackup[]
+  grammarProgress  UserGrammarProgress[]
+  examResults      ExamResult[]
 
   @@map("users")
 }
@@ -281,4 +289,110 @@ model YoutubeTranscript {
 
   @@id([videoId, targetLang])
   @@map("youtube_transcripts")
+}
+
+// ─── Grammar Module ───────────────────────────────────────────
+
+model GrammarTopic {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String   @db.VarChar(255)
+  description String?
+  level       Level    @default(BEGINNER)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  lessons     GrammarLesson[]
+
+  @@map("grammar_topics")
+}
+
+model GrammarLesson {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId     String   @map("topic_id") @db.Uuid
+  title       String   @db.VarChar(255)
+  content     String   // Markdown
+  exercises   Json     @default("[]") // Các bài tập nhỏ
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  topic       GrammarTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  progress    UserGrammarProgress[]
+
+  @@map("grammar_lessons")
+}
+
+model UserGrammarProgress {
+  userId      String   @map("user_id") @db.Uuid
+  lessonId    String   @map("lesson_id") @db.Uuid
+  isCompleted Boolean  @default(false) @map("is_completed")
+  score       Int?     @db.SmallInt
+  lastStudied DateTime @default(now()) @map("last_studied") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      GrammarLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+  @@map("user_grammar_progress")
+}
+
+// ─── Mock Exam Module ─────────────────────────────────────────
+
+model ExamCategory {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(255) // TOEIC, IELTS...
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  exams       MockExam[]
+
+  @@map("exam_categories")
+}
+
+model MockExam {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId  String   @map("category_id") @db.Uuid
+  title       String   @db.VarChar(255)
+  timeLimit   Int      @map("time_limit") @db.SmallInt // In minutes
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  category    ExamCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  questions   ExamQuestion[]
+  results     ExamResult[]
+
+  @@map("mock_exams")
+}
+
+model ExamQuestion {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examId       String   @map("exam_id") @db.Uuid
+  questionText String   @map("question_text")
+  options      Json     // ["Option A", "Option B", "Option C", "Option D"]
+  correctAns   Int      @map("correct_ans") @db.SmallInt // Index (0, 1, 2, 3)
+  explanation  String?  // Giải thích chi tiết tại sao chọn đáp án này
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  exam         MockExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@map("exam_questions")
+}
+
+model ExamResult {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  examId      String   @map("exam_id") @db.Uuid
+  totalScore  Float    @map("total_score")
+  answers     Json     // Lưu lại list id câu hỏi & đáp án user đã chọn
+  timeSpent   Int      @map("time_spent") @db.SmallInt // Số phút đã làm
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam        MockExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@map("exam_results")
 }
